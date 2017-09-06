@@ -6,7 +6,7 @@ import * as bottleActions from './actions/bottle';
 import { Virus, Pill, HalfPill } from './objects';
 import Bottle from './components/bottle';
 import Constants from './constants';
-import Logic from './logic';
+import Grid from './logic';
 import './App.css';
 
 // https://youtu.be/ZcZG9uDsAv8?t=399
@@ -53,21 +53,24 @@ class App extends Component {
 	fall() {
 		let count = 0;
 
+		// Create a separate copy of state and tee the actions to it so we can do all changes in one tick
+		let grid = new Grid(this.props.viruses, this.props.pills, this.props.halfpills);
+
 		for (var row = 0; row < Constants.BOTTLE_HEIGHT; row++) {
-			var pills = R.filter(p => p.row === row, this.props.pills);
+			var pills = grid.pillsOnRow(row);
 			var i, pill, willfall;
 
 			for (i = 0; i < pills.length; i++) {
 				pill = pills[i];
 				willfall = false;
 
-				if (Logic.isCellEmpty(pill.row - 1, pill.col, this.props.viruses, this.props.pills, this.props.halfpills)) {
+				if (grid.isCellEmpty(pill.row - 1, pill.col)) {
 					willfall = true;
 				}
 
 				// If the pill is horizontal, check the cell to the below/right as well
 				if (pill.rotation === 1 || pill.rotation === 3) {
-					if (! Logic.isCellEmpty(pill.row - 1, pill.col + 1, this.props.viruses, this.props.pills, this.props.halfpills)) {
+					if (! grid.isCellEmpty(pill.row - 1, pill.col + 1)) {
 						willfall = false;
 					}
 				}
@@ -75,22 +78,24 @@ class App extends Component {
 				if (willfall) {
 					count++;
 					this.props.actions.dropPill(pill);
+					grid.dropPill(pill);
 				}
 			}
 
-			var halfpills = this.props.halfpills.filter(p => p.row === row);
+			var halfpills = grid.halfpillsOnRow(row);
 
 			for (i = 0; i < halfpills.length; i++) {
 				pill = halfpills[i];
 				willfall = false;
 
-				if (Logic.isCellEmpty(pill.row - 1, pill.col, this.props.viruses, this.props.pills, this.props.halfpills)) {
+				if (grid.isCellEmpty(pill.row - 1, pill.col)) {
 					willfall = true;
 				}
 
 				if (willfall) {
 					count++;
 					this.props.actions.dropHalfPill(pill);
+					grid.dropHalfpill(pill);
 				}
 
 			}
